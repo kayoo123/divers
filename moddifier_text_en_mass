@@ -1,0 +1,14 @@
+#!/bin/sh
+
+### sauvegarde de la conf
+cp /usr/openv/netbackup/bp.conf /usr/openv/netbackup/bp.conf.`date +%Y%m%d-%H%M`
+
+### modification
+cat > /usr/openv/netbackup/bp.conf << "EOF"
+SERVER = asaus111v.proton.intra.irsn.fr
+SERVER = asaus112.proton.intra.irsn.fr
+SERVER = asaus113.proton.intra.irsn.fr
+SERVER = asauu201
+EOF
+echo "CLIENT_NAME = $HOSTNAME" >> /usr/openv/netbackup/bp.conf
+
