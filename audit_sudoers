@@ -1,0 +1,34 @@
+#!/bin/sh
+
+
+### LIST DES SERVEURS ###
+#########################
+
+LIST_SERVERS=$(cat /root/admin/JDE/cle_ssh/LIST_SRV_SSH_YES.txt)
+FIC_LOG=/root/admin/JDE/audit_sudoers/audit.log
+FIC_RESULT=/root/admin/JDE/audit_sudoers/result.txt
+
+### SCRIPT A POUSSER ### 
+########################
+rm -f $FIC_LOG
+exec > $FIC_LOG 2>&1
+
+for server in $LIST_SERVERS
+do
+
+###lancer un script
+        echo "###################################################################"
+        echo $server 
+        echo "###################"
+        echo "User UID= 0"
+        cat /etc/passwd | cut -d: -f 1,3  |grep :0 |cut -d: -f 1
+        echo "-------------------"
+        ssh -i /root/.ssh/id_dsa_gs $server 'cat /etc/sudoers |grep -v ^#'
+        echo ""
+
+done
+
+
+### découpage
+grep -Ev "^%|^User_Alias|^Cmnd_Alias|^Defaults" $FIC_LOG |uniq >  $FIC_RESULT
+
