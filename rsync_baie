@@ -1,0 +1,137 @@
+#!/bin/bash
+#
+# Script de sauvegarde des baies
+#
+
+##
+## Initialisation des variables de supervision
+##
+
+CFGFILE="/root/admin/backup_baie/backup_baie.cfg"
+LOGFILE="/root/admin/backup_baie/backup_baie-$(date +%Y%m%d).log"
+EXCLUDE_DIRS="lost+found"
+#RSYNC_OPTS="-a -u -x --exclude='$EXCLUDE_DIRS' --delete --inplace --stats --dry-run"
+RSYNC_OPTS="-a -u -x --exclude='$EXCLUDE_DIRS' --delete --inplace --stats"
+MYHOSTNAME=$(hostname -s)
+ERROR_STATUS=0
+SSH_KEY="/root/.ssh/id_dsa_gs"
+
+##
+## Declaration des fonctions
+##
+
+function check_err
+{
+  if [ $? -ne 0 ]; then
+    echo "ERROR : probleme rencontre lors de la synchronisation des baies sur $MYHOSTNAME"
+    ERROR_STATUS=1
+  fi
+}
+
+function check_for_running_backup
+{
+  if pgrep rsync 2>&1 > /dev/null; then
+    echo "ERROR : synchronisation des baies sur $MYHOSTNAME non lance: un processus rsync est deja en cours."
+    ERROR_STATUS=1
+    send_status_to_reporting_host
+    send_mail_report
+    exit 1
+  fi
+}
+
+function send_status_to_reporting_host
+{
+  REPORTING_HOST=aadmu202v
+  REPORTING_DIR=/irsn/local01/infouni/audit/$MYHOSTNAME/supervision
+  REPORTING_LOG_FILE=/tmp/$(basename $0).log
+
+  echo $(/bin/date "+%a %d %B") > $REPORTING_LOG_FILE
+  if [ $ERROR_STATUS -eq 0 ]; then
+    echo $(basename $0) $MYHOSTNAME "OK" >> $REPORTING_LOG_FILE;
+  else
+    echo $(basename $0) $MYHOSTNAME "FAILED" >> $REPORTING_LOG_FILE;
+  fi
+
+  scp -i $SSH_KEY $REPORTING_LOG_FILE $REPORTING_HOST:$REPORTING_DIR && rm $REPORTING_LOG_FILE
+}
+
+function send_mail_report
+{
+  if [ $ERROR_STATUS -eq 0 ]; then
+    SUBJECT="[REPORTING SAUVEGARDE] $MYHOSTNAME : Synchronisation des baies OK"
+  else
+    SUBJECT="[REPORTING SAUVEGARDE] $MYHOSTNAME : Synchronisation des baies FAILED"
+  fi
+#  (cat $LOGFILE | mail -s "$SUBJECT" root) && rm $LOGFILE
+}
+
+function do_backup
+{
+  echo ""
+  echo "[$(date +"%d/%m/%Y %H:%M")] *************** debut synchronisation partition $SRC_DIR ***************"
+  echo ""
+
+  for subdir in $(ls $SRC_DIR); do
+    if [ -d $SRC_DIR/$subdir ]; then
+      if [ $(expr match "$EXCLUDE_DIRS" ".*$subdir.*") -eq 0 ] ; then
+        if [ ! -d $DST_DIR/$subdir ]; then mkdir -p $DST_DIR/$subdir; fi
+        echo "[$(date +"%d/%m/%Y %H:%M")] Debut de synchronisation du repertoire $subdir"
+        rsync $RSYNC_OPTS $SRC_DIR/$subdir $DST_DIR/ | sed -e 's/^/                   /'
+        check_err
+        echo "[$(date +"%d/%m/%Y %H:%M")] Fin de synchronisation du repertoire $subdir"
+        echo ""
+      else
+        echo ""
+        echo "[$(date +"%d/%m/%Y %H:%M")] INFO : le repertoire $subdir a ete ignore"
+        echo ""
+      fi
+    fi
+  done
+
+  echo ""
+  echo "[$(date +"%d/%m/%Y %H:%M")] *************** fin synchronisation partition $SRC_DIR ***************"
+  echo ""
+}
+
+##
+## Redirection de la sortie vers le fichier de log
+##
+
+exec &> $LOGFILE
+
+
+##
+## Debut du script
+##
+
+check_for_running_backup
+
+echo "[$(date +"%d/%m/%Y %H:%M")] INFO : debut de synchro le $(date +"%d/%m/%Y") a  $(date +"%H:%M")"
+
+# Pour chaque ligne du fichier de config ....
+for line in $(cat $CFGFILE |grep -v '#')
+do
+
+  SRC_DIR=$(echo $line | awk -F'|' '{print $1}')
+  DST_DIR=$(echo $line | awk -F'|' '{print $2}')
+
+  # on verifie si le repertoire a synchroniser existe
+  if [ -d $SRC_DIR ]; then
+    # on verifie si le point de montage du repertoire de destination existe
+    if [ -d $DST_DIR ]; then
+     # on lance la synchronisation
+     do_backup
+     # maintenant que l'on a termine, on peut demonter la partition de backup
+    else
+      echo "[$(date +"%d/%m/%Y %H:%M")] ERROR : le point de montage $DST_DIR n'existe pas"
+    fi
+  else
+    echo "[$(date +"%d/%m/%Y %H:%M")] ERROR : le repertoire $SRC_DIR mentionne dans le fichier $CFGFILE n'existe pas"
+  fi
+done
+
+echo "[$(date +"%d/%m/%Y %H:%M")] INFO : fin de synchro le $(date +"%d/%m/%Y") a  $(date +"%H:%M")"
+
+send_status_to_reporting_host
+send_mail_report
+
