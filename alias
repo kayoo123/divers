@@ -1,0 +1,7 @@
+## DEEPIN-FR.org: deepin-tools
+alias deepin-tools=/usr/share/deepin-tools/deepin-fr_tools.sh
+alias deepin-tools-dev="bash <(wget --dns-cache=off https://raw.githubusercontent.com/kayoo123/deepin-fr.org/dev/deepin-fr_tools.sh -O -)"
+
+## meteo
+alias meteo="curl wttr.in/montfermeil"
+
