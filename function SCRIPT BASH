@@ -1,0 +1,62 @@
+###############
+## TEST 
+###############
+
+
+
+## Test Bin
+BIN_PATH='/opt/hosting/run/exploit/current/bin'
+if [ ! -d "$BIN_PATH" ];then
+        echo '* Bad bin path *'
+        exit 1
+fi
+
+
+
+## Test Root
+if [ "$(id -u)" != "0" ]; then
+        echo "* Vous n'etes pas root. *"
+        exit 1
+fi
+
+
+
+########################
+## FUNCTION
+########################
+
+
+## USAGE
+function USAGE {
+        echo 'Info:'
+        echo "   Wrapper pour la mise en ligne automatique."
+        echo 'Usage:'
+        echo "   $(basename $0) -p <product_id> -g <g0r0c0>"
+}
+
+if [ -z "$ARG_PRODUCTID" ] || [ -z "$ARG_VERSION" ]; then
+        echo "* Argument(s) manquant *"
+        USAGE
+        exit 1
+fi
+
+
+
+
+## Retour erreur
+function execORdie {
+        script="$1"
+        echo '======================================================================'
+        echo "Exec: $script"
+        eval "$script"
+        if [ "$?" != '0' ];then
+                echo '* Fin du script, erreur detectee *'
+                exit 1
+        fi
+}
+execORdie "$BIN_PATH/sync_admin2admin.sh -p $ARG_PRODUCTID -g $ARG_VERSION"
+
+
+
+
+
