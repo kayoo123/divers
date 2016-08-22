@@ -1,3 +1,125 @@
+#!/bin/sh
+
+#===============================================================================
+# CREATION
+# Date de creation      : 08/09/87
+# Auteur                : jdesesquelles
+# Version               : V1.0
+#===============================================================================
+#
+# Commentaire complet du script.
+#
+#===============================================================================
+
+
+# ------------------------------------------------------------------------------
+# VARIABLES: globales
+# ------------------------------------------------------------------------------
+# Pour le fichier de log
+HOME_PATH=${HOME}
+DATE=`date +"%Y%m%d"`
+LOG_FILE="${HOME_PATH}/checkout-$DATE.log"
+
+# ------------------------------------------------------------------------------
+# FONCTION: Message et log
+# ------------------------------------------------------------------------------
+displaymessage() {
+  echo "$*"
+}
+
+displaytitle() {
+  displaymessage "------------------------------------------------------------------------------"
+  displaymessage "$*"
+  displaymessage "------------------------------------------------------------------------------"
+
+}
+
+displayerror() {
+  displaymessage "$*" >&2
+}
+
+# Premier parametre: ERROR CODE
+# Second parametre: MESSAGE
+displayerrorandexit() {
+  local exitcode=$1
+  shift
+displayerror "$*"
+  exit $exitcode
+}
+
+# Premier parametre: MESSAGE
+# Autres parametres: COMMAND
+displayandexec() {
+  local message=$1
+  echo -n "[En cours] $message"
+  shift
+echo ">>> $*" >> $LOG_FILE 2>&1
+  sh -c "$*" >> $LOG_FILE 2>&1
+  local ret=$?
+  if [ $ret -ne 0 ]; then
+echo -e "\r\e[0;31m [  ERROR  ]\e[0m $message"
+  else
+echo -e "\r\e[0;32m [   OK    ]\e[0m $message"
+  fi
+return $ret
+}
+
+
+# ------------------------------------------------------------------------------
+# FUNCTION: Applications
+# ------------------------------------------------------------------------------
+
+....
+...
+..
+
+
+
+
+# ------------------------------------------------------------------------------
+# MAIN: Menu
+# ------------------------------------------------------------------------------
+
+Main() {
+clear
+echo
+displaytitle "Checkout SVN pour les produits CFengine"
+echo -e "\tDeux methode possible:"
+echo -e "\t\tALL  : Faire un checkout complet des poduits suivant:${PRODUCTLIST}"
+echo -e "\t\tLIST : Faire un checkout de certains produit, comme pour les nouveaux produits"
+echo
+echo -e -n "Entrez votre choix [ ALL | LIST ] : "
+read METHOD
+
+case $METHOD in
+  ALL|all )
+    AllProduct
+  ;;
+  LIST|list )
+    ProductChoice
+  ;;
+  * )
+    echo
+    echo "réponse incorrect"
+    echo
+    Main
+  ;;
+esac
+}
+
+Main
+
+
+
+
+
+
+
+
+
+
+
+
 ###############
 ## TEST 
 ###############
