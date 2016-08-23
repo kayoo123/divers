@@ -2,49 +2,13 @@
 alias deepin-tools=/usr/share/deepin-tools/deepin-fr_tools.sh
 alias deepin-tools-dev="bash <(wget --dns-cache=off https://raw.githubusercontent.com/kayoo123/deepin-fr.org/dev/deepin-fr_tools.sh -O -)"
 
-## meteo
-alias meteo="curl wttr.in/montfermeil"
-
-function findsvn() {
-if test -z "$1"; then
-  echo
-  echo "Ce script recherche (find) les \"arguments\" dans l'arboresence du depot SVN local"
-  echo "=> findsvn \$arg1 \$arg2 \$arg3 \$arg4 ..."
-  echo
-  echo "  ex: findsvn dev ecare fluxp"
-  echo
-else
-  find $HOME/repositories \( ! -regex '.*/\..*' \) -type f -print \
-  |grep -i "$1" \
-  |grep -i "$2" \
-  |grep -i "$3" \
-  |grep -i "$4" \
-  |grep -i "$5" \
-  |grep -i "$6" \
-  > /tmp/findsvn.out
-  grep -iE --color "$1|$2|$3|$4|$5|$6" /tmp/findsvn.out
+##alias SVN
+if [ -f $HOME/SCRIPTS/alias_SVN.sh ]; then
+        source $HOME/SCRIPTS/alias_SVN.sh
 fi
-}
-alias findrepo=findsvn
 
-function grepsvn() {
-if test -z "$1"; then
-  echo
-  echo "Ce script recherche (grep) une \"occurence\" a l\'interieur des fichiers du depot SVN local trie par \"arguements\""
-  echo "=> grepsvn \$occurence \$arg2 \$arg3 \$arg4 ..."
-  echo
-  echo "  ex: grepsvn /home dev ecare"
-  echo
-else
-  find $HOME/repositories \( ! -regex '.*/\..*' \) -type f -print \
-  |grep -i "$2" \
-  |grep -i "$3" \
-  |grep -i "$4" \
-  |grep -i "$5" \
-  |grep -i "$6" \
-  > /tmp/grepsvn.out
-  for i in $(cat /tmp/grepsvn.out); do grep -il "$1" $i; done
-fi
-}
-alias greprepo=grepsvn
+## alias perso
+alias meteo="curl wttr.in/bagnolet"
 
+##fortune+cowsay
+fortune -u fr -s |cowsay -f /usr/share/cowsay/cows/koala.cow
