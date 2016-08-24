@@ -1,6 +1,12 @@
-## Prompt PS1 classic
-PROMPT_COMMAND='PS1="\[\033[0;33m\][\!]\`if [[ \$? = "0" ]]; then echo "\\[\\033[32m\\]"; else echo "\\[\\033[31m\\]"; fi\`[jeremi@clafoutis: \W]\$\[\033[0m\] "'
-# > (sinon install PowerLine, ou ZSH avec theme agnoster)
+## Prompt PS1 
+function PS1_OLD {
+        export PROMPT_COMMAND='PS1="\[\033[0;33m\][\!]\`if [[ \$? = "0" ]]; then echo "\\[\\033[32m\\]"; else echo "\\[\\033[31m\\]"; fi\`[jeremi@clafoutis: \W]\$\[\033[0m\] "'
+}
+function PS1_NEW {
+        export PROMPT_COMMAND='PS1="$(/home/jdesesquelles/APPLIS/powerline-shell/powerline-shell.py $? 2> /dev/null)"'
+}
+PS1_NEW
+
 
 ##fortune+cowsay
 fortune -u fr -s |cowsay -f /usr/share/cowsay/cows/koala.cow
