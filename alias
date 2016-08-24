@@ -1,3 +1,10 @@
+## Prompt PS1 classic
+PROMPT_COMMAND='PS1="\[\033[0;33m\][\!]\`if [[ \$? = "0" ]]; then echo "\\[\\033[32m\\]"; else echo "\\[\\033[31m\\]"; fi\`[jeremi@clafoutis: \W]\$\[\033[0m\] "'
+# > (sinon install PowerLine, ou ZSH avec theme agnoster)
+
+##fortune+cowsay
+fortune -u fr -s |cowsay -f /usr/share/cowsay/cows/koala.cow
+
 ## DEEPIN-FR.org: deepin-tools
 alias deepin-tools=/usr/share/deepin-tools/deepin-fr_tools.sh
 alias deepin-tools-dev="bash <(wget --dns-cache=off https://raw.githubusercontent.com/kayoo123/deepin-fr.org/dev/deepin-fr_tools.sh -O -)"
@@ -10,5 +17,4 @@ fi
 ## alias perso
 alias meteo="curl wttr.in/bagnolet"
 
-##fortune+cowsay
-fortune -u fr -s |cowsay -f /usr/share/cowsay/cows/koala.cow
+
