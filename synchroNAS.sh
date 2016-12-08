@@ -7,7 +7,7 @@
 # Version               : V1.0
 #===============================================================================
 #
-# Script Backup/sauvegarde sur /mnt/filer
+# Script Synchro home sur NAS
 #
 #===============================================================================
 
@@ -16,9 +16,11 @@
 # VARIABLES: globales
 # ------------------------------------------------------------------------------
 DATE=`date +"%Y%m%d-%H%M"`
-DIR_DIST="/mnt/FLAN"
-DIR_BACKUP="$DIR_DIST/backup_home"
-LOG_FILE="${DIR_DIST}/backup_home-${DATE}.log"
+NAS_ADDR="192.168.0.49"
+NAS_USER="nas-users"
+NAS_CREDENTIALS=""
+DIR_MOUNT="/mnt/FLAN"
+LOG_FILE="/var/log/synchroNAS-${DATE}.log"
 
 
 # ------------------------------------------------------------------------------
@@ -59,16 +61,25 @@ return $ret
 # FONCTION: Globales
 # ------------------------------------------------------------------------------
 function testMount {
-  /bin/ls $DIR_DIST > /dev/null
-  /bin/mount |grep $DIR_DIST > /dev/null
+## a remplacer par une connection mount
+#####  /bin/ls $DIR_MOUNT > /dev/null
+  /bin/mount |grep $DIR_MOUNT > /dev/null
   if [ ! $? -eq 0 ]; then
     displayError "Impossible de monter le repertoire distant."
+    exit 1
   fi
 }
 function checkProcRsync {
   if /usr/bin/pgrep rsync 2>&1 > /dev/null; then
     displayError "Un processus rsync est deja en cours."
+    exit 1
   fi
+}
+function synchro () {
+  SOURCE="$1/"
+  DESTINATION="$2"
+  LIST_FILE=$(/usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable -e ssh ${SOURCE} ${DESTINATION} | grep -E 'Number of files transferred: ([0-9]+)' | grep -o -E '[0-9]+'); let FCNT+=5
+  /usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable -e ssh ${SOURCE} ${DESTINATION} |pv -pteabl -s ${LIST_FILE} >/dev/null
 }
 
 # ------------------------------------------------------------------------------
@@ -76,7 +87,7 @@ function checkProcRsync {
 # ------------------------------------------------------------------------------
 #clear
 echo
-displayTitle "Script Backup/Sauvegarde de sa HOME"
+displayTitle "Script synchro de sa HOME"
 
 testMount
 checkProcRsync
@@ -86,17 +97,12 @@ checkProcRsync
 echo $DATE > $LOG_FILE
 
 ## repertoire et fichier a rsync
-displayAndExec "Copie du fichier .bashrc" "/bin/cat $HOME/.bashrc > $DIR_BACKUP/_bashrc"
-displayAndExec "Copie du fichier smb.conf" "/bin/cat /etc/samba/smb.conf > $DIR_BACKUP/smb.conf"
-displayAndExec "Copie du fichier crontab" "/usr/bin/crontab -l |grep -v ^#  > $DIR_BACKUP/crontab"
-displayAndExec "Copie du fichier .adm" "cp $HOME/.adm $DIR_BACKUP/adm"
-displayAndExec "Rsync du repertoire .clusterssh" "/usr/bin/rsync -avP $HOME/.clusterssh/ $DIR_BACKUP/_clusterssh"
-displayAndExec "Rsync du repertoire .ssh" "/usr/bin/rsync -avP $HOME/.ssh/ $DIR_BACKUP/_ssh"
-displayAndExec "Rsync du repertoire APPLIS" "/usr/bin/rsync -avP $HOME/APPLIS/ $DIR_BACKUP/APPLIS"
-displayAndExec "Rsync du repertoire SCRIPTS" "/usr/bin/rsync -avP $HOME/SCRIPTS/ $DIR_BACKUP/SCRIPTS"
-displayAndExec "Rsync du repertoire Documents" "/usr/bin/rsync -avP $HOME/Documents/ $DIR_BACKUP/Documents"
+displayAndExec "Synchro du repertoire Documents" "synchro ${HOME}/Documents ${DIR_MOUNT}/Documents"
+displayAndExec "Synchro du repertoire Images" "synchro ${HOME}/Images ${DIR_MOUNT}/Images"
+displayAndExec "Synchro du repertoire Musiques" "synchro ${HOME}/Musiques ${DIR_MOUNT}/Musiques"
+displayAndExec "Synchro du repertoire Videos" "synchro ${HOME}/Videos ${DIR_MOUNT}/Videos"
 
 ## retention LOG
-find $DIR_DIST -name "backup_home*.log" -mtime +5 -exec rm -f {} \;
+find /var/log -name "synchroNAS*.log" -mtime +5 -exec rm -f {} \;
 echo
 exit 0
