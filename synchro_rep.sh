@@ -2,12 +2,12 @@
 
 #===============================================================================
 # CREATION
-# Date de creation      : 26/08/2016
+# Date de creation      : 17/08/2017
 # Auteur                : jdesesquelles
 # Version               : V1.0
 #===============================================================================
 #
-# Script Backup/sauvegarde sur /mnt/filer
+# Script Synchro home => USB backup
 #
 #===============================================================================
 
@@ -15,11 +15,10 @@
 # ------------------------------------------------------------------------------
 # VARIABLES: globales
 # ------------------------------------------------------------------------------
-DATE=`date +"%Y%m%d-%H%M"`
-DIR_DIST="/mnt/filer"
-DIR_BACKUP="$DIR_DIST/backup_home"
-LOG_FILE="${DIR_DIST}/backup_home-${DATE}.log"
-
+DATE=$(date +"%Y%m%d-%H%M")
+DIR_MOUNT="/mnt/filer"
+DIR_BACKUP="$DIR_MOUNT/backup"
+LOG_FILE="/var/log/synchroUSB-${DATE}.log"
 
 # ------------------------------------------------------------------------------
 # FONCTION: Message et log
@@ -42,7 +41,7 @@ displayTitle() {
 # Parametres: MESSAGE COMMAND
 displayAndExec() {
   local message=$1
-  echo -n " [En cours] $message"
+  echo -n " [ Veuillez patienter ] $message"
   shift
   echo -e "\n\n>>> $*" >> $LOG_FILE 2>&1
   sh -c "$*" >> $LOG_FILE 2>&1
@@ -55,21 +54,30 @@ displayAndExec() {
 return $ret
 }
 
-
 # ------------------------------------------------------------------------------
 # FONCTION: Globales
 # ------------------------------------------------------------------------------
 function testMount {
-  /bin/ls $DIR_DIST > /dev/null
-  /bin/mount |grep $DIR_DIST > /dev/null
+## a remplacer par une connection mount
+#####  /bin/ls $DIR_MOUNT > /dev/null
+  /bin/mount |grep $DIR_MOUNT > /dev/null
   if [ ! $? -eq 0 ]; then
     displayError "Impossible de monter le repertoire distant."
+    exit 1
   fi
 }
 function checkProcRsync {
   if /usr/bin/pgrep rsync 2>&1 > /dev/null; then
     displayError "Un processus rsync est deja en cours."
+    exit 1
   fi
+}
+function synchro() {
+  SOURCE="$1/"
+  DESTINATION="$2"
+  #LIST_FILE=$(/usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable ${SOURCE} ${DESTINATION} | grep -E 'Number of files transferred: ([0-9]+)' | grep -o -E '[0-9]+'); let FCNT+=5
+  #/usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable ${SOURCE} ${DESTINATION} |pv -pteabl -s ${LIST_FILE} >/dev/null
+  /usr/bin/rsync -avP --human-readable ${SOURCE} ${DESTINATION} 
 }
 
 # ------------------------------------------------------------------------------
@@ -77,28 +85,24 @@ function checkProcRsync {
 # ------------------------------------------------------------------------------
 #clear
 echo
-displayTitle "Script Backup/Sauvegarde de sa HOME"
+displayTitle "Script synchro de sa HOME"
 
 testMount
 checkProcRsync
 
-# tag DATE
+# Repertoire de backup
 [ -d $DIR_BACKUP ]|| mkdir -p $DIR_BACKUP
-echo $DATE > $LOG_FILE
+echo -e "\n\t [DEBUT] -- $(date)" > $LOG_FILE
 
 ## repertoire et fichier a rsync
-displayAndExec "Copie du fichier .bashrc" "/bin/cat $HOME/.bashrc > $DIR_BACKUP/_bashrc"
-displayAndExec "Copie du fichier smb.conf" "/bin/cat /etc/samba/smb.conf > $DIR_BACKUP/smb.conf"
-displayAndExec "Copie du fichier crontab" "cat /etc/cron.d/*  |grep -v ^#  > $DIR_BACKUP/crontab"
-displayAndExec "Copie du fichier .adm" "cp $HOME/.adm $DIR_BACKUP/adm"
-displayAndExec "Rsync du repertoire .clusterssh" "/usr/bin/rsync -avP $HOME/.clusterssh/ $DIR_BACKUP/_clusterssh"
-displayAndExec "Rsync du repertoire .ssh" "/usr/bin/rsync -avP $HOME/.ssh/ $DIR_BACKUP/_ssh"
-displayAndExec "Rsync du repertoire APPLIS" "/usr/bin/rsync -avP $HOME/APPLIS/ $DIR_BACKUP/APPLIS"
-displayAndExec "Rsync du repertoire SCRIPTS" "/usr/bin/rsync -avP $HOME/SCRIPTS/ $DIR_BACKUP/SCRIPTS"
-displayAndExec "Rsync du repertoire Documents" "/usr/bin/rsync -avP $HOME/Documents/ $DIR_BACKUP/Documents"
+displayAndExec "Synchro du repertoire Documents" "rsync -aP ${HOME}/Documents/ ${DIR_BACKUP}/Documents"
+displayAndExec "Synchro du repertoire Images" "rsync -aP ${HOME}/Pictures/ ${DIR_BACKUP}/Pictures"
+displayAndExec "Synchro du repertoire Musiques" "rsync -aP ${HOME}/Music/ ${DIR_BACKUP}/Music"
+displayAndExec "Synchro du repertoire Videos" "rsync -aP ${HOME}/Videos/ ${DIR_BACKUP}/Videos"
+
+echo -e "\n\t [ FIN ] -- $(date)" >> $LOG_FILE
 
 ## retention LOG
-find $DIR_DIST -name "backup_home*.log" -mtime +5 -exec rm -f {} \;
+find /var/log -name "synchroUSB*.log" -mtime +5 -exec rm -f {} \;
 echo
-
 exit 0
