@@ -41,7 +41,7 @@ displayTitle() {
 # Parametres: MESSAGE COMMAND
 displayAndExec() {
   local message=$1
-  echo -n " [ Veuillez patienter ] $message"
+  echo -n " [ Veuillez patienter... ] $message"
   shift
   echo -e "\n\n>>> $*" >> $LOG_FILE 2>&1
   sh -c "$*" >> $LOG_FILE 2>&1
@@ -71,13 +71,6 @@ function checkProcRsync {
     displayError "Un processus rsync est deja en cours."
     exit 1
   fi
-}
-function synchro() {
-  SOURCE="$1/"
-  DESTINATION="$2"
-  #LIST_FILE=$(/usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable ${SOURCE} ${DESTINATION} | grep -E 'Number of files transferred: ([0-9]+)' | grep -o -E '[0-9]+'); let FCNT+=5
-  #/usr/bin/rsync -r --dry-run --ignore-existing --stats --human-readable ${SOURCE} ${DESTINATION} |pv -pteabl -s ${LIST_FILE} >/dev/null
-  /usr/bin/rsync -avP --human-readable ${SOURCE} ${DESTINATION} 
 }
 
 # ------------------------------------------------------------------------------
