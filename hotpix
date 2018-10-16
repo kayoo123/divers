@@ -1,3 +1,8 @@
+
+
+#############
+# BASH
+##############
 cat $HOME/SCRIPTS/hotpix.sh
 
 #!/bin/bash
@@ -7,6 +12,53 @@ display ${IMG}
 
 
 
-
 grep hotpix ~/.bashrc
 [[ -f $HOME/SCRIPTS/hotpix.sh ]] && alias hotpix='$HOME/SCRIPTS/hotpix.sh &'
+
+####################
+
+
+##########
+# PYTHON
+##########
+
+#!/usr/bin/python
+
+#print ('Script Hotpix')
+
+import requests
+import re
+import os
+import wget  # pip
+#import pyperclip  # pip
+from PIL import Image
+
+## VARS
+url = 'http://www.hotpix.fr/random.php'
+file = '/home/jdesesquelles/test.jpg'
+
+## Get content
+r = requests.get(url)
+contenu = str(r.content)
+
+## Get link from content
+regex=ur"\b(http://media.hotpix.fr/images/.*jpg)\b"
+links = re.findall(regex, contenu)
+
+## Copy to clipboard
+print(links[0])
+#pyperclip.copy(links[0])
+#pyperclip.paste()
+
+## clean file temp
+if os.path.isfile(file):
+  os.remove(file)
+
+## Download file
+wget.download(url=links[0], out=file)
+print()
+
+## Open file and clean
+img = Image.open(file)
+img.show()
+os.remove(file)
