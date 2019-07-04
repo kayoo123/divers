@@ -23,4 +23,6 @@ fi
 ## alias perso
 alias meteo="curl wttr.in/bagnolet"
 
+## BUS
 
+alias bus="curl -s https://api-ratp.pierre-grimaud.fr/v3/schedules/bus/221/gallieni/A |jq '.result | {suivant: .schedules[1].message, depart: .schedules[0].message}'"
